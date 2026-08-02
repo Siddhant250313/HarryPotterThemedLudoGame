@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hogwarts Tech Aptitude Ludo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Georgia', 'Times New Roman', serif;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #1a1a24;
+      color: #e0d8b0;
+      padding: 20px;
+    }
+    h1 {
+      margin: 0 0 15px;
+      color: #f1c40f;
+      text-shadow: 2px 2px 4px #000;
+      letter-spacing: 2px;
+    }
+
+    /* LOBBY STYLES */
+    #lobby-container {
+      width: 100%;
+      max-width: 800px;
+      background: #2a2a38;
+      padding: 25px;
+      border-radius: 12px;
+      border: 2px solid #f1c40f;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .lobby-section {
+      background: #1f1f2e;
+      padding: 15px 20px;
+      border-radius: 8px;
+      border: 1px solid #3a3a4e;
+    }
+    .lobby-section h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      color: #f1c40f;
+    }
+    .grid-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    input[type="text"], input[type="password"] {
+      padding: 10px 12px;
+      border: 1px solid #4a4a5e;
+      background: #12121a;
+      color: #fff;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      width: 100%;
+    }
+    .btn {
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: white;
+      background-color: #4a3b70;
+      border: 1px solid #f1c40f;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn:hover { background-color: #634d93; transform: scale(1.02); }
+    .btn-gryffindor { background-color: #740001; }
+    .btn-slytherin { background-color: #1a472a; }
+    .btn-warning { background-color: #d4ac0d; color: #111; }
+
+    /* GAME & LEADERBOARD LAYOUT */
+    #main-game-layout {
+      display: none;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 20px;
+      max-width: 95vw;
+    }
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      background: #2a2a38;
+      padding: 20px;
+      border-radius: 12px;
+      border: 2px solid #f1c40f;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    canvas {
+      border: 3px solid #f1c40f;
+      border-radius: 4px;
+      background-color: #fff;
+    }
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      width: 100%;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: #1f1f2e;
+      border-radius: 8px;
+      border: 1px solid #3a3a4e;
+    }
+    .status-box {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #e0d8b0;
+    }
+
+    /* TIMER BADGE STYLING */
+    #timer-box {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #ff6b6b;
+      background: #3a1c1c;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid #ff6b6b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #dice-btn {
+      padding: 10px 24px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #1a1a24;
+      background-color: #f1c40f;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(241, 196, 15, 0.4);
+    }
+    #dice-btn:disabled {
+      background-color: #555;
+      color: #888;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    #dice-value {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: bold;
+      background: #12121a;
+      color: #f1c40f;
+      border: 2px solid #f1c40f;
+      border-radius: 6px;
+    }
+
+    /* EMOJI REACTION BAR */
+    #reaction-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 15px;
+      background: #1f1f2e;
+      border-radius: 8px;
+      border: 1px solid #3a3a4e;
+    }
+    .emoji-btn {
+      font-size: 1.5rem;
+      background: #2a2a38;
+      border: 1px solid #f1c40f;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      cursor: pointer;
+      transition: transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .emoji-btn:hover { transform: scale(1.2); }
+
+    /* FLOATING EMOJI ANIMATION ON CANVAS */
+    .floating-emoji {
+      position: absolute;
+      font-size: 3rem;
+      animation: floatUp 1.8s ease-out forwards;
+      pointer-events: none;
+      z-index: 500;
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(0.8); }
+      50% { transform: translateY(-40px) scale(1.2); }
+      100% { opacity: 0; transform: translateY(-80px) scale(1); }
+    }
+
+    /* SIDEBAR LEADERBOARD */
+    #leaderboard-container {
+      width: 300px;
+      background: #2a2a38;
+      padding: 20px;
+      border-radius: 12px;
+      border: 2px solid #f1c40f;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    #leaderboard-container h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      color: #f1c40f;
+      text-align: center;
+      border-bottom: 2px solid #3a3a4e;
+      padding-bottom: 10px;
+    }
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    .leaderboard-table th {
+      text-align: left;
+      padding: 8px 6px;
+      color: #f1c40f;
+      font-size: 0.85rem;
+      border-bottom: 1px solid #3a3a4e;
+    }
+    .leaderboard-table td {
+      padding: 10px 6px;
+      border-bottom: 1px solid #222230;
+      font-weight: 600;
+    }
+
+    /* MODAL OVERLAYS */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .modal-overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+    .modal-card {
+      background: #2a2a38;
+      border: 2px solid #f1c40f;
+      color: #e0d8b0;
+      padding: 24px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 480px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .option-btn {
+      padding: 12px 16px;
+      background: #1f1f2e;
+      color: #fff;
+      border: 1px solid #4a4a5e;
+      border-radius: 6px;
+      text-align: left;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .option-btn:hover { border-color: #f1c40f; }
+
+    @media (max-width: 960px) {
+      #main-game-layout { flex-direction: column; align-items: center; }
+      #leaderboard-container { width: 100%; max-width: 600px; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>⚡ Hogwarts Tech Ludo ⚡</h1>
+
+  <!-- LOBBY SCREEN -->
+  <div id="lobby-container">
+    <div id="rejoin-banner" style="display:none;" class="lobby-section">
+      <span style="color:#ff6b6b; font-weight:bold;">⚠️ Active Game Disconnect Detected!</span>
+      <button class="btn btn-warning" onclick="rejoinGame()" style="margin-left:15px;">Rejoin Match</button>
+    </div>
+
+    <!-- House Player Names -->
+    <div class="lobby-section">
+      <h3>🏰 Hogwarts Houses Champions</h3>
+      <div class="grid-2x2">
+        <div><label style="color:#e74c3c; font-weight:bold;">🦁 Gryffindor</label><input type="text" id="p1-name" value="Gryffindor Champion"></div>
+        <div><label style="color:#2ecc71; font-weight:bold;">🐍 Slytherin</label><input type="text" id="p2-name" value="Slytherin Champion"></div>
+        <div><label style="color:#f1c40f; font-weight:bold;">🦅 Ravenclaw</label><input type="text" id="p3-name" value="Ravenclaw Champion"></div>
+        <div><label style="color:#3498db; font-weight:bold;">🦡 Hufflepuff</label><input type="text" id="p4-name" value="Hufflepuff Champion"></div>
+      </div>
+    </div>
+
+    <!-- Matchmaking Modes -->
+    <div class="lobby-section">
+      <h3>🔮 House Tournament Modes</h3>
+      <div class="grid-2x2">
+        <button class="btn btn-gryffindor" onclick="startGame('public')">🌐 Public Match</button>
+        <button class="btn btn-slytherin" onclick="startGame('create_private')">🔒 Private Common Room</button>
+      </div>
+      <div style="margin-top: 12px; display: flex; gap: 10px;">
+        <input type="text" id="room-code-input" placeholder="Enter Floo Network Code (e.g. HOOch99)">
+        <button class="btn" onclick="startGame('join_code')">Connect</button>
+      </div>
+    </div>
+
+    <!-- Options & Invites -->
+    <div class="lobby-section grid-2x2">
+      <div>
+        <label><input type="checkbox" id="pass-protect-check"> Alohomora Password</label>
+        <input type="password" id="room-pass-input" placeholder="Set Room Password" style="margin-top:6px;">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn btn-warning" onclick="copyInviteLink()">📜 Send Owl Invite Link</button>
+        <button class="btn" onclick="startGame('spectator')">👁️ Spectate Match</button>
+      </div>
+    </div>
+
+    <!-- Match History -->
+    <div class="lobby-section">
+      <h3>📜 House Cup History</h3>
+      <table class="leaderboard-table">
+        <thead>
+          <tr><th>Mode</th><th>House Winner</th><th>Spells Cast (Kills)</th><th>Date</th></tr>
+        </thead>
+        <tbody id="history-body">
+          <tr><td colspan="4" style="color:#888;">No House Cup matches recorded yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MAIN GAMEPLAY SCREEN -->
+  <div id="main-game-layout">
+    <div id="game-container">
+      <canvas id="ludoCanvas" width="600" height="600"></canvas>
+      
+      <div id="controls">
+        <div class="status-box">Turn: <span id="current-player" style="color: #e74c3c;">GRYFFINDOR</span></div>
+        <div id="timer-box">⏳ <span id="timer-display">15</span>s</div>
+        <div>
+          <button id="dice-btn">Cast Dice</button>
+          <span id="dice-value">-</span>
+        </div>
+      </div>
+
+      <!-- EMOJI REACTION BAR -->
+      <div id="reaction-bar">
+        <span style="font-size:0.85rem; font-weight:bold; color:#f1c40f;">House Reactions:</span>
+        <div id="emoji-options-container" style="display:flex; gap:10px;">
+          <span style="font-size:0.85rem; color:#888;">Cast dice or solve spell trivia to react!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR LEADERBOARD -->
+    <div id="leaderboard-container">
+      <h2>🏆 House Cup Standings</h2>
+      <table class="leaderboard-table">
+        <thead>
+          <tr><th>#</th><th>House</th><th>Home</th><th>Active</th><th>Spells</th></tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+      <button class="btn" onclick="leaveMatch()" style="margin-top:auto;">Leave Tournament</button>
+    </div>
+  </div>
+
+  <!-- TECH QUESTION MODAL -->
+  <div id="quiz-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h2 id="quiz-question">Ravenclaw Door Riddle</h2>
+      <div id="quiz-options" class="options-grid"></div>
+    </div>
+  </div>
+
+<script>
+// ==========================================
+// AUDIO ENGINE
+// ==========================================
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
+
+function playSound(type) {
+  initAudio();
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+
+  if (type === 'roll') {
+    osc.type = 'square'; osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(400, now + 0.15);
+    gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.15);
+    osc.start(now); osc.stop(now + 0.15);
+  } else if (type === 'move') {
+    osc.type = 'sine'; osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+    gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0, now + 0.1);
+    osc.start(now); osc.stop(now + 0.1);
+  } else if (type === 'correct') {
+    osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, now);
+    osc.frequency.setValueAtTime(783.99, now + 0.15);
+    gain.gain.setValueAtTime(0.25, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
+    osc.start(now); osc.stop(now + 0.3);
+  } else if (type === 'wrong') {
+    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, now);
+    osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+    gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0, now + 0.25);
+    osc.start(now); osc.stop(now + 0.25);
+  } else if (type === 'pop') {
+    osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
+    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
+    gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.08);
+    osc.start(now); osc.stop(now + 0.08);
+  }
+}
+
+// ==========================================
+// GAME STATE & TRACK DATA
+// ==========================================
+const canvas = document.getElementById('ludoCanvas');
+const ctx = canvas.getContext('2d');
+const diceBtn = document.getElementById('dice-btn');
+const diceValDisplay = document.getElementById('dice-value');
+const currentPlayerDisplay = document.getElementById('current-player');
+const emojiContainer = document.getElementById('emoji-options-container');
+
+// Timer Variables
+const timerDisplay = document.getElementById('timer-display');
+const TURN_TIME_LIMIT = 15;
+let timerSeconds = TURN_TIME_LIMIT;
+let timerInterval = null;
+
+const C_SIZE = 600;
+const CELL = C_SIZE / 15;
+
+const happyEmojis = ['⚡', '🦁', '🦉', '🪄'];
+const sadEmojis = ['🐍', '💀', '🕸️', '🧹'];
+
+const techQuestions = [
+  { q: "Which data structure operates on FIFO basis?", options: ["Stack", "Queue", "Tree", "Graph"], answer: 1 },
+  { q: "Worst-case time complexity of QuickSort?", options: ["O(n log n)", "O(n)", "O(n²)", "O(1)"], answer: 2 },
+  { q: "JavaScript block-scoped reassignable variable keyword?", options: ["var", "const", "let", "static"], answer: 2 },
+  { q: "What does HTTP stand for?", options: ["HyperText Transfer Protocol", "High-Text Transit Process", "Hyperlink Text Program", "Home Tool Protocol"], answer: 0 }
+];
+
+const mainTrack = [
+  {x:1, y:6}, {x:2, y:6}, {x:3, y:6}, {x:4, y:6}, {x:5, y:6},
+  {x:6, y:5}, {x:6, y:4}, {x:6, y:3}, {x:6, y:2}, {x:6, y:1}, {x:6, y:0},
+  {x:7, y:0}, {x:8, y:0},
+  {x:8, y:1}, {x:8, y:2}, {x:8, y:3}, {x:8, y:4}, {x:8, y:5},
+  {x:9, y:6}, {x:10, y:6}, {x:11, y:6}, {x:12, y:6}, {x:13, y:6}, {x:14, y:6},
+  {x:14, y:7}, {x:14, y:8},
+  {x:13, y:8}, {x:12, y:8}, {x:11, y:8}, {x:10, y:8}, {x:9, y:8},
+  {x:8, y:9}, {x:8, y:10}, {x:8, y:11}, {x:8, y:12}, {x:8, y:13}, {x:8, y:14},
+  {x:7, y:14}, {x:6, y:14},
+  {x:6, y:13}, {x:6, y:12}, {x:6, y:11}, {x:6, y:10}, {x:6, y:9},
+  {x:5, y:8}, {x:4, y:8}, {x:3, y:8}, {x:2, y:8}, {x:1, y:8}, {x:0, y:8},
+  {x:0, y:7}, {x:0, y:6}
+];
+
+const bases = {
+  gryffindor: [{x:2, y:2}, {x:3, y:2}, {x:2, y:3}, {x:3, y:3}],
+  slytherin: [{x:11, y:2}, {x:12, y:2}, {x:11, y:3}, {x:12, y:3}],
+  ravenclaw: [{x:11, y:11}, {x:12, y:11}, {x:11, y:12}, {x:12, y:12}],
+  hufflepuff: [{x:2, y:11}, {x:3, y:11}, {x:2, y:12}, {x:3, y:12}]
+};
+
+const players = {
+  gryffindor: { name: 'Gryffindor', color: '#740001', accent: '#e74c3c', startIndex: 0, homePath: [{x:1,y:7},{x:2,y:7},{x:3,y:7},{x:4,y:7},{x:5,y:7},{x:6,y:7}], tokens: [{id:0,step:-1},{id:1,step:-1},{id:2,step:-1},{id:3,step:-1}], kills: 0 },
+  slytherin: { name: 'Slytherin', color: '#1a472a', accent: '#2ecc71', startIndex: 13, homePath: [{x:7,y:1},{x:7,y:2},{x:7,y:3},{x:7,y:4},{x:7,y:5},{x:7,y:6}], tokens: [{id:0,step:-1},{id:1,step:-1},{id:2,step:-1},{id:3,step:-1}], kills: 0 },
+  ravenclaw: { name: 'Ravenclaw', color: '#0e1a40', accent: '#f1c40f', startIndex: 26, homePath: [{x:13,y:7},{x:12,y:7},{x:11,y:7},{x:10,y:7},{x:9,y:7},{x:8,y:7}], tokens: [{id:0,step:-1},{id:1,step:-1},{id:2,step:-1},{id:3,step:-1}], kills: 0 },
+  hufflepuff: { name: 'Hufflepuff', color: '#ecb939', accent: '#3498db', startIndex: 39, homePath: [{x:7,y:13},{x:7,y:12},{x:7,y:11},{x:7,y:10},{x:7,y:9},{x:7,y:8}], tokens: [{id:0,step:-1},{id:1,step:-1},{id:2,step:-1},{id:3,step:-1}], kills: 0 }
+};
+
+let turnOrder = ['gryffindor', 'slytherin', 'ravenclaw', 'hufflepuff'];
+let turnIndex = 0;
+let currentDice = 0;
+let diceRolled = false;
+let currentGameMode = 'Public';
+
+if (localStorage.getItem('ludo_active_match') === 'true') {
+  document.getElementById('rejoin-banner').style.display = 'block';
+}
+
+function copyInviteLink() {
+  const code = 'FLOONET' + Math.floor(1000 + Math.random() * 9000);
+  navigator.clipboard.writeText(window.location.origin + '?room=' + code);
+  alert(`Owl Post Sent! (Floo Code: ${code})`);
+}
+
+function startGame(mode) {
+  players.gryffindor.name = document.getElementById('p1-name').value || 'Gryffindor';
+  players.slytherin.name = document.getElementById('p2-name').value || 'Slytherin';
+  players.ravenclaw.name = document.getElementById('p3-name').value || 'Ravenclaw';
+  players.hufflepuff.name = document.getElementById('p4-name').value || 'Hufflepuff';
+
+  currentGameMode = mode.toUpperCase();
+  document.getElementById('lobby-container').style.display = 'none';
+  document.getElementById('main-game-layout').style.display = 'flex';
+  localStorage.setItem('ludo_active_match', 'true');
+  
+  if (mode === 'spectator') {
+    diceBtn.disabled = true;
+    diceBtn.innerText = 'Spectating';
+  } else {
+    startTurnTimer();
+  }
+
+  drawBoard();
+}
+
+function rejoinGame() {
+  document.getElementById('rejoin-banner').style.display = 'none';
+  startGame('rejoin');
+}
+
+function leaveMatch() {
+  stopTurnTimer();
+  localStorage.removeItem('ludo_active_match');
+  location.reload();
+}
+
+function startTurnTimer() {
+  stopTurnTimer();
+  timerSeconds = TURN_TIME_LIMIT;
+  timerDisplay.innerText = timerSeconds;
+
+  timerInterval = setInterval(() => {
+    timerSeconds--;
+    timerDisplay.innerText = timerSeconds;
+
+    if (timerSeconds <= 0) {
+      stopTurnTimer();
+      playSound('wrong');
+      alert(`⏰ Time's up for ${players[turnOrder[turnIndex]].name}! Passing turn.`);
+      nextTurn();
+    }
+  }, 1000);
+}
+
+function stopTurnTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+}
+
+function setEmojiOptions(type) {
+  emojiContainer.innerHTML = '';
+  const set = type === 'happy' ? happyEmojis : sadEmojis;
+
+  set.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.className = 'emoji-btn';
+    btn.innerText = emoji;
+    btn.onclick = () => triggerFloatingEmoji(emoji);
+    emojiContainer.appendChild(btn);
+  });
+}
+
+function triggerFloatingEmoji(emoji) {
+  playSound('pop');
+  const currentKey = turnOrder[turnIndex];
+  const baseCoord = bases[currentKey][0];
+  const pixel = gridToPixel(baseCoord);
+
+  const el = document.createElement('div');
+  el.className = 'floating-emoji';
+  el.innerText = emoji;
+  el.style.left = `${pixel.x + 20}px`;
+  el.style.top = `${pixel.y}px`;
+
+  document.getElementById('game-container').appendChild(el);
+  setTimeout(() => el.remove(), 1800);
+}
+
+function gridToPixel(gridPos) {
+  return { x: gridPos.x * CELL + CELL / 2, y: gridPos.y * CELL + CELL / 2 };
+}
+
+function getTokenCoordinate(playerKey, token) {
+  if (token.step === -1) return gridToPixel(bases[playerKey][token.id]);
+  const player = players[playerKey];
+  if (token.step < 51) {
+    const trackIndex = (player.startIndex + token.step) % mainTrack.length;
+    return gridToPixel(mainTrack[trackIndex]);
+  } else {
+    const homeIndex = token.step - 51;
+    return gridToPixel(player.homePath[homeIndex]);
+  }
+}
+
+function drawBoard() {
+  ctx.clearRect(0, 0, C_SIZE, C_SIZE);
+
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 15; i++) {
+    ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, C_SIZE); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(C_SIZE, i * CELL); ctx.stroke();
+  }
+
+  drawSquareBlock(0, 0, 6, 6, '#740001');
+  drawSquareBlock(9, 0, 6, 6, '#1a472a');
+  drawSquareBlock(9, 9, 6, 6, '#0e1a40');
+  drawSquareBlock(0, 9, 6, 6, '#ecb939');
+
+  for (let i = 1; i <= 5; i++) {
+    fillCell(i, 7, '#740001'); fillCell(7, i, '#1a472a');
+    fillCell(14 - i, 7, '#0e1a40'); fillCell(7, 14 - i, '#ecb939');
+  }
+
+  fillCell(1, 6, '#740001'); fillCell(8, 1, '#1a472a');
+  fillCell(13, 8, '#0e1a40'); fillCell(6, 13, '#ecb939');
+
+  ctx.beginPath(); ctx.moveTo(6*CELL,6*CELL); ctx.lineTo(7.5*CELL,7.5*CELL); ctx.lineTo(6*CELL,9*CELL); ctx.fillStyle='#740001'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(6*CELL,6*CELL); ctx.lineTo(7.5*CELL,7.5*CELL); ctx.lineTo(9*CELL,6*CELL); ctx.fillStyle='#1a472a'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(9*CELL,6*CELL); ctx.lineTo(7.5*CELL,7.5*CELL); ctx.lineTo(9*CELL,9*CELL); ctx.fillStyle='#0e1a40'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(6*CELL,9*CELL); ctx.lineTo(7.5*CELL,7.5*CELL); ctx.lineTo(9*CELL,9*CELL); ctx.fillStyle='#ecb939'; ctx.fill();
+
+  turnOrder.forEach(pKey => {
+    players[pKey].tokens.forEach(token => {
+      const coord = getTokenCoordinate(pKey, token);
+      drawToken(coord.x, coord.y, players[pKey].color);
+    });
+  });
+
+  updateLeaderboard();
+}
+
+function fillCell(x, y, color) {
+  ctx.fillStyle = color; ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+  ctx.strokeRect(x * CELL, y * CELL, CELL, CELL);
+}
+
+function drawSquareBlock(x, y, w, h, color) {
+  ctx.fillStyle = color; ctx.fillRect(x * CELL, y * CELL, w * CELL, h * CELL);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect((x + 1) * CELL, (y + 1) * CELL, (w - 2) * CELL, (h - 2) * CELL);
+}
+
+function drawToken(x, y, color) {
+  ctx.beginPath(); ctx.arc(x, y, CELL / 2.8, 0, Math.PI * 2);
+  ctx.fillStyle = color; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = '#f1c40f'; ctx.stroke();
+}
+
+diceBtn.addEventListener('click', () => {
+  if (diceRolled) return;
+
+  playSound('roll');
+  currentDice = Math.floor(Math.random() * 6) + 1;
+  diceValDisplay.innerText = currentDice;
+
+  if (currentDice === 6) {
+    stopTurnTimer();
+    setEmojiOptions('happy');
+    promptTechQuestion();
+  } else {
+    setEmojiOptions('sad');
+    diceRolled = true;
+    checkTurnValidMoves();
+  }
+});
+
+function checkTurnValidMoves() {
+  const activePlayer = players[turnOrder[turnIndex]];
+  const hasValidMove = activePlayer.tokens.some(token => isValidMove(token, currentDice));
+  if (!hasValidMove) {
+    setTimeout(() => { alert("No valid moves! Passing turn."); nextTurn(); }, 400);
+  }
+}
+
+function promptTechQuestion() {
+  const qData = techQuestions[Math.floor(Math.random() * techQuestions.length)];
+  document.getElementById('quiz-question').innerText = qData.q;
+  const opts = document.getElementById('quiz-options');
+  opts.innerHTML = '';
+
+  qData.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerText = opt;
+    btn.onclick = () => {
+      document.getElementById('quiz-modal').classList.remove('active');
+      if (idx === qData.answer) {
+        playSound('correct');
+        diceRolled = true;
+        startTurnTimer();
+        checkTurnValidMoves();
+      } else {
+        playSound('wrong');
+        setEmojiOptions('sad');
+        alert("Incorrect answer! Turn forfeited.");
+        nextTurn();
+      }
+    };
+    opts.appendChild(btn);
+  });
+
+  document.getElementById('quiz-modal').classList.add('active');
+}
+
+function isValidMove(token, dice) {
+  if (token.step === -1) return dice === 6;
+  return token.step + dice <= 56;
+}
+
+canvas.addEventListener('click', (e) => {
+  if (!diceRolled) return;
+  const rect = canvas.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  const clickY = e.clientY - rect.top;
+
+  const playerKey = turnOrder[turnIndex];
+  for (let token of players[playerKey].tokens) {
+    const coord = getTokenCoordinate(playerKey, token);
+    if (Math.hypot(clickX - coord.x, clickY - coord.y) <= CELL / 2) {
+      if (isValidMove(token, currentDice)) {
+        moveToken(playerKey, token, currentDice);
+        break;
+      }
+    }
+  }
+});
+
+function moveToken(playerKey, token, steps) {
+  playSound('move');
+  token.step = (token.step === -1 && steps === 6) ? 0 : token.step + steps;
+
+  if (token.step < 51) {
+    const currPos = (players[playerKey].startIndex + token.step) % mainTrack.length;
+    turnOrder.forEach(opp => {
+      if (opp !== playerKey) {
+        players[opp].tokens.forEach(oppT => {
+          if (oppT.step >= 0 && oppT.step < 51) {
+            if (currPos === (players[opp].startIndex + oppT.step) % mainTrack.length) {
+              oppT.step = -1;
+              players[playerKey].kills++;
+              playSound('wrong');
+            }
+          }
+        });
+      }
+    });
+  }
+
+  drawBoard();
+  checkWinCondition(playerKey);
+
+  if (currentDice === 6) {
+    diceRolled = false;
+    diceValDisplay.innerText = '-';
+    startTurnTimer();
+  } else {
+    nextTurn();
+  }
+}
+
+function nextTurn() {
+  diceRolled = false;
+  currentDice = 0;
+  diceValDisplay.innerText = '-';
+  turnIndex = (turnIndex + 1) % turnOrder.length;
+  const p = players[turnOrder[turnIndex]];
+  currentPlayerDisplay.innerText = p.name.toUpperCase();
+  currentPlayerDisplay.style.color = p.accent;
+  updateLeaderboard();
+  startTurnTimer();
+}
+
+function updateLeaderboard() {
+  const stats = turnOrder.map(key => {
+    const p = players[key];
+    const home = p.tokens.filter(t => t.step === 56).length;
+    const active = p.tokens.filter(t => t.step >= 0 && t.step < 56).length;
+    return { name: p.name, color: p.accent, home, active, kills: p.kills, score: home * 1000 + p.kills * 50 };
+  }).sort((a, b) => b.score - a.score);
+
+  const tbody = document.getElementById('leaderboard-body');
+  tbody.innerHTML = '';
+  stats.forEach((item, idx) => {
+    tbody.innerHTML += `<tr><td>${idx+1}</td><td style="color:${item.color}">${item.name}</td><td>${item.home}/4</td><td>${item.active}</td><td>${item.kills}</td></tr>`;
+  });
+}
+
+function checkWinCondition(playerKey) {
+  if (players[playerKey].tokens.every(t => t.step === 56)) {
+    stopTurnTimer();
+    localStorage.removeItem('ludo_active_match');
+    saveMatchHistory(players[playerKey].name, players[playerKey].kills);
+    alert(`🎉 ${players[playerKey].name} WINS THE HOUSE CUP!`);
+    diceBtn.disabled = true;
+  }
+}
+
+function saveMatchHistory(winner, kills) {
+  const history = JSON.parse(localStorage.getItem('ludo_history') || '[]');
+  history.unshift({ mode: currentGameMode, winner, kills, date: new Date().toLocaleDateString() });
+  localStorage.setItem('ludo_history', JSON.stringify(history.slice(0, 5)));
+  renderHistory();
+}
+
+function renderHistory() {
+  const history = JSON.parse(localStorage.getItem('ludo_history') || '[]');
+  const tbody = document.getElementById('history-body');
+  if (history.length === 0) return;
+  tbody.innerHTML = '';
+  history.forEach(item => {
+    tbody.innerHTML += `<tr><td>${item.mode}</td><td><b>${item.winner}</b></td><td>${item.kills}</td><td>${item.date}</td></tr>`;
+  });
+}
+
+renderHistory();
+</script>
+
+</body>
+</html>
